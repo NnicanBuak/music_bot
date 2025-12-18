@@ -1,8 +1,8 @@
 [project]
-name = "aiogram_bot_template"
+name = "nnican_music_bot"
+authors = [{ name = "", email = "work@nnican.ru" }]
 version = "1.0"
 description = "Aiogram 3.x bot template using PostgreSQL (asyncpg) with SQLAlchemy + alembic"
-authors = ["wakaree <nullmatawasoradesu@gmail.com>"]
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12,<3.13"
@@ -10,7 +10,7 @@ dependencies = [
     "aiogram~=3.20.0",
     "aiogram-contrib>=1.1.4",
     "aiogram-i18n~=1.4",
-    "aiohttp~=3.11.18",
+    "aiohttp~=3.13.2",
     "alembic~=1.14.1",
     "asyncpg~=0.30.0",
     "fastapi>=0.115.12",
@@ -19,20 +19,16 @@ dependencies = [
     "msgspec~=0.18.6",
     "pydantic~=2.10.6",
     "pydantic-settings[yaml]~=2.9.1",
-    "redis~=5.2.1",
+    "redis~=7.1.0",
     "sqlalchemy~=2.0.41",
     "uvicorn>=0.34.2",
 ]
 
 [project.urls]
-Repository = "https://github.com/wakaree/aiogram_bot_template.git"
+Repository = "https://github.com/NnicanBuak/music_bot.git"
 
 [tool.uv]
-dev-dependencies = [
-    "ftl-extract>=0.8.0",
-    "mypy>=1.14.1",
-    "ruff>=0.8.6",
-]
+dev-dependencies = ["ftl-extract>=0.8.0", "mypy>=1.14.1", "ruff>=0.8.6"]
 
 [tool.black]
 line-length = 99
@@ -57,21 +53,10 @@ lint.select = [
     "YTT",
 ]
 lint.ignore = ["N805"]
-exclude = [
-    ".venv",
-    ".idea",
-]
+exclude = [".venv", ".idea"]
 [tool.mypy]
-plugins = [
-    "sqlalchemy.ext.mypy.plugin",
-    "pydantic.mypy"
-]
-exclude = [
-    "venv",
-    ".venv",
-    ".idea",
-    ".tests",
-]
+plugins = ["sqlalchemy.ext.mypy.plugin", "pydantic.mypy"]
+exclude = ["venv", ".venv", ".idea", ".tests"]
 warn_unused_configs = true
 disallow_any_generics = true
 disallow_subclassing_any = true
