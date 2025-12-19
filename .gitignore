@@ -3,12 +3,14 @@
 .vscode/
 .code-workspace
 data/*
+git.diff
 
 # Environment
+.makeenv
 .venv/
 .env
 venv/
-docker-compose.yml
+docker-compose.override.yml
 uv.lock
 .tests
 

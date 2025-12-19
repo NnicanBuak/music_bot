@@ -1,72 +1,103 @@
+# Файл для хранения текущего окружения
+MAKEENV_FILE := .makeenv
 
-project_dir := .
-package_dir := app
+# Читаем сохранённое окружение (если есть)
+-include $(MAKEENV_FILE)
+
+# По умолчанию dev, если ничего не сохранено
+ENV ?= dev
+
+COMPOSE_FILE = $(if $(filter prod,$(ENV)),deploy/docker-compose.prod.yml,docker-compose.yml)
+COMPOSE_CMD = docker compose -f $(COMPOSE_FILE)
 
 .PHONY: help
-help: ## Display this help.
-	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+help:
+	@echo ""
+	@echo "Current environment: \033[36m$(ENV)\033[0m"
+	@echo ""
+	@echo "Usage: make <target> [ENV=dev|prod]"
+	@echo ""
+	@echo "Environment:"
+	@echo "  dev          Switch to development mode"
+	@echo "  prod         Switch to production mode"
+	@echo ""
+	@echo "Commands:"
+	@echo "  build        Build $(ENV) environment"
+	@echo "  up           Start $(ENV) containers"
+	@echo "  down         Stop $(ENV) containers"
+	@echo "  logs         Show logs [SVC=service_name]"
+	@echo "  restart      Restart $(ENV) environment"
+	@echo ""
+ifeq ($(ENV),dev)
+	@echo "Dev-specific:"
+	@echo "  db           Start only DB services"
+	@echo "  run          Run bot locally"
+	@echo "  migrate      Apply migrations"
+	@echo "  format       Format code"
+endif
+	@echo ""
 
-##@ Formatting & Linting
+##@ Environment Switch
 
-.PHONY: reformat
-reformat: ## Reformat code
-	@uv run ruff format $(project_dir)
-	@uv run ruff check $(project_dir) --fix
+.PHONY: dev
+dev:
+	@echo "ENV=dev" > $(MAKEENV_FILE)
+	@echo "Switched to \033[36mdevelopment\033[0m mode"
+	@echo "Now run: make build && make up"
 
-.PHONY: lint
-lint: reformat ## Lint code
-	@uv run mypy $(project_dir)
+.PHONY: prod
+prod:
+	@echo "ENV=prod" > $(MAKEENV_FILE)
+	@echo "Switched to \033[32mproduction\033[0m mode"
+	@echo "Now run: make build && make up"
 
-##@ Database
+##@ Main Commands
 
-.PHONY: migration
-migration: ## Make database migration
-	@uv run alembic revision \
-	  --autogenerate \
-	  --rev-id $(shell python migrations/_get_revision_id.py) \
-	  --message $(message)
+.PHONY: build
+build:
+	@echo "Building $(ENV) environment..."
+ifeq ($(ENV),prod)
+	@cd deploy && docker compose -f docker-compose.prod.yml build
+else
+	@docker compose build
+endif
 
-.PHONY: migrate
-migrate: ## Apply database migrations
-	@uv run alembic upgrade head
+.PHONY: up
+up:
+	@echo "Starting $(ENV) environment..."
+ifeq ($(ENV),prod)
+	@cd deploy && docker compose -f docker-compose.prod.yml up -d
+else
+	@docker compose up -d
+endif
 
-.PHONY: app-run-db
-app-run-db: ## Run bot database containers
-	@docker compose up -d --remove-orphans postgres redis
+.PHONY: down
+down:
+	@echo "Stopping $(ENV) environment..."
+	@$(COMPOSE_CMD) down
 
-##@ App commands
+.PHONY: logs
+logs:
+	@$(COMPOSE_CMD) logs -f $(SVC)
+
+.PHONY: restart
+restart: down up
+
+##@ Dev Commands
+
+.PHONY: db
+db:
+	@docker compose up -d postgres redis
 
 .PHONY: run
-run: ## Run bot
-	@uv run python -O -m $(package_dir)
+run:
+	@uv run python -O -m app
 
-.PHONY: app-build
-app-build: ## Build bot image
-	@docker compose build
+.PHONY: migrate
+migrate:
+	@uv run alembic upgrade head
 
-.PHONY: app-run
-app-run: ## Run bot in docker container
-	@docker compose stop
-	@docker compose up -d --remove-orphans
-
-.PHONY: app-stop
-app-stop: ## Stop docker containers
-	@docker compose stop
-
-.PHONY: app-down
-app-down: ## Down docker containers
-	@docker compose down
-
-.PHONY: app-destroy
-app-destroy: ## Destroy docker containers
-	@docker compose down -v --remove-orphans
-
-.PHONY: app-logs
-app-logs: ## Show bot logs
-	@docker compose logs -f bot
-
-##@ Other
-
-.PHONY: name
-name: ## Get top-level package name
-	@echo $(package_dir)
+.PHONY: format
+format:
+	@uv run ruff format .
+	@uv run ruff check . --fix
