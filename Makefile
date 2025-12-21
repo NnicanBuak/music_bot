@@ -30,6 +30,7 @@ help:
 	@echo ""
 ifeq ($(ENV),dev)
 	@echo "Dev-specific:"
+	@echo "  test         Test covered code"
 	@echo "  db           Start only DB services"
 	@echo "  run          Run bot locally"
 	@echo "  migrate      Apply migrations"
@@ -83,6 +84,11 @@ logs:
 restart: down up
 
 ##@ Dev Commands
+
+.PHONY: test
+test:
+	@uv run pytest tests/ -v --cov=src --cov-report=term-missing
+
 
 .PHONY: db
 db:
