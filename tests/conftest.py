@@ -9,15 +9,10 @@ import pytest
 import pytest_asyncio
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    AsyncSession,
-    async_sessionmaker,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from app.models.base import Base
+from app.models.sql.base import Base
 
 
 @pytest.fixture(scope="session")
@@ -36,12 +31,12 @@ async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
         poolclass=NullPool,
         echo=False,
     )
-
+    
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-
+    
     yield engine
-
+    
     await engine.dispose()
 
 
@@ -53,7 +48,7 @@ async def db_session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, Non
         class_=AsyncSession,
         expire_on_commit=False,
     )
-
+    
     async with async_session() as session:
         yield session
         await session.rollback()
