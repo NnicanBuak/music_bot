@@ -33,7 +33,6 @@ ifeq ($(ENV),dev)
 	@echo "  db           Start only DB services"
 	@echo "  run          Run bot locally"
 	@echo "  migrate      Apply migrations"
-	@echo "  format       Format code"
 endif
 	@echo ""
 
@@ -96,8 +95,3 @@ run:
 .PHONY: migrate
 migrate:
 	@uv run alembic upgrade head
-
-.PHONY: format
-format:
-	@uv run ruff format .
-	@uv run ruff check . --fix

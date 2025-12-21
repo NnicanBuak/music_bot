@@ -30,3 +30,9 @@ dist/
 site/
 *.egg-info/
 *.egg
+
+# Deploy
+*.service
+
+# Keep examples
+!*.example*
