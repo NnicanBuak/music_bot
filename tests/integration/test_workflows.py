@@ -1,7 +1,8 @@
 """Integration tests for complete workflows."""
 
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 from aiogram import Bot
 from sqlalchemy.ext.asyncio import AsyncSession
 

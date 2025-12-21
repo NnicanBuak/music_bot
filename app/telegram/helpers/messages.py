@@ -222,9 +222,7 @@ class MessageHelper:
             **kwargs,
         )
 
-        fsm_data["message_id"] = (
-            new_message.message_id if isinstance(new_message, Message) else message_id
-        )
+        fsm_data["message_id"] = new_message.message_id if isinstance(new_message, Message) else message_id
         await self.fsm.set_data(fsm_data)
 
         return new_message, fsm_data

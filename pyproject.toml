@@ -35,7 +35,7 @@ dev = [
     "pytest-mock>=3.12.0",
     "aiosqlite>=0.19.0",
     "ftl-extract>=0.8.0",
-    "mypy>=1.14.1", 
+    "mypy>=1.13.0,<1.14", 
     "ruff>=0.8.6"
 ]
 
@@ -44,8 +44,8 @@ line-length = 99
 exclude = "\\.?venv|\\.?tests"
 
 [tool.ruff]
-target-version = "py38"
-line-length = 99
+target-version = "py312"
+line-length = 130
 lint.select = [
     "C",
     "DTZ",
@@ -65,7 +65,7 @@ lint.ignore = ["N805"]
 exclude = [".venv", ".idea"]
 [tool.mypy]
 plugins = ["sqlalchemy.ext.mypy.plugin", "pydantic.mypy"]
-exclude = ["venv", ".venv", ".idea", ".tests"]
+exclude = ["venv", ".venv", ".idea", ".tests", "tests"]
 warn_unused_configs = true
 disallow_any_generics = true
 disallow_subclassing_any = true

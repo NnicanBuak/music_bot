@@ -21,10 +21,7 @@ class StorageKey(BaseModel):
         cls.__separator__ = kwargs.pop("separator", ":")
         cls.__prefix__ = kwargs.pop("prefix", None)
         if cls.__separator__ in (cls.__prefix__ or ""):
-            raise ValueError(
-                f"Separator symbol {cls.__separator__!r} can not be used "
-                f"inside prefix {cls.__prefix__!r}"
-            )
+            raise ValueError(f"Separator symbol {cls.__separator__!r} can not be used inside prefix {cls.__prefix__!r}")
         super().__init_subclass__(**kwargs)
 
     @classmethod
@@ -44,9 +41,6 @@ class StorageKey(BaseModel):
         for key, value in self.model_dump(mode="json").items():
             encoded = self.encode_value(value)
             if self.__separator__ in encoded:
-                raise ValueError(
-                    f"Separator symbol {self.__separator__!r} can not be used "
-                    f"in value {key}={encoded!r}"
-                )
+                raise ValueError(f"Separator symbol {self.__separator__!r} can not be used in value {key}={encoded!r}")
             result.append(encoded)
         return self.__separator__.join(result)

@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import signal
-from typing import NoReturn
 
 from aiogram import Bot, Dispatcher
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
@@ -26,7 +25,7 @@ def setup_signal_handlers() -> None:
     signal.signal(signal.SIGINT, lambda s, f: signal_handler(s))
 
 
-async def on_startup_webhook(bot: Bot, config: AppConfig) -> None:
+async def on_startup_webhook(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
     webhook_url = f"{config.telegram.webhook_url}{config.telegram.webhook_path}"
     logger.info(f"Setting webhook: {webhook_url}")
 
@@ -46,7 +45,6 @@ async def on_shutdown_webhook(bot: Bot) -> None:
 
 
 def run_webhook(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
-
     setup_signal_handlers()
 
     app = web.Application()
@@ -58,7 +56,6 @@ def run_webhook(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
     async def health_readiness(request: web.Request) -> web.Response:
         """Readiness probe - готов обрабатывать запросы."""
         if _shutdown_event.is_set():
-
             return web.json_response({"status": "shutting_down", "ready": False}, status=503)
 
         try:
@@ -73,9 +70,7 @@ def run_webhook(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
             )
         except Exception as e:
             logger.error(f"Health check failed: {e}")
-            return web.json_response(
-                {"status": "unhealthy", "ready": False, "error": str(e)}, status=503
-            )
+            return web.json_response({"status": "unhealthy", "ready": False, "error": str(e)}, status=503)
 
     app.router.add_get("/health/liveness", health_liveness)
     app.router.add_get("/health/readiness", health_readiness)
@@ -87,7 +82,7 @@ def run_webhook(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
 
     setup_application(app, dispatcher, bot=bot)
 
-    dispatcher.startup.register(lambda: on_startup_webhook(bot, config))
+    dispatcher.startup.register(lambda: on_startup_webhook(dispatcher, bot, config))
     dispatcher.shutdown.register(lambda: on_shutdown_webhook(bot))
 
     logger.info(f"Starting webhook server on {config.server.host}:{config.server.port}")
@@ -105,7 +100,6 @@ def run_webhook(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
 
 
 async def _run_polling_async(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
-
     await bot.delete_webhook(drop_pending_updates=config.telegram.drop_pending_updates)
     logger.info("Starting polling...")
 
@@ -117,7 +111,6 @@ async def _run_polling_async(dispatcher: Dispatcher, bot: Bot, config: AppConfig
     )
 
     try:
-
         done, pending = await asyncio.wait(
             [polling_task, asyncio.create_task(_shutdown_event.wait())],
             return_when=asyncio.FIRST_COMPLETED,
@@ -144,7 +137,6 @@ async def _run_polling_async(dispatcher: Dispatcher, bot: Bot, config: AppConfig
 
 
 def run_polling(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
-
     setup_signal_handlers()
 
     try:
@@ -154,8 +146,6 @@ def run_polling(dispatcher: Dispatcher, bot: Bot, config: AppConfig) -> None:
 
 
 async def start_health_server(config: AppConfig) -> web.AppRunner:
-    """Запуск отдельного health check сервера для polling режима."""
-
     app = web.Application()
 
     async def health_liveness(request: web.Request) -> web.Response:

@@ -28,10 +28,6 @@ async def check_redis(response: HealthcheckResponse, redis: RedisRepository) -> 
 
 def check_polling(response: HealthcheckResponse, dispatcher: Dispatcher) -> None:
     if dispatcher._running_lock.locked():
-        response.results.append(
-            CheckerResult(name="polling", ok=True, message="Polling is running")
-        )
+        response.results.append(CheckerResult(name="polling", ok=True, message="Polling is running"))
         return
-    response.results.append(
-        CheckerResult(name="polling", ok=False, message="Polling is not running")
-    )
+    response.results.append(CheckerResult(name="polling", ok=False, message="Polling is not running"))

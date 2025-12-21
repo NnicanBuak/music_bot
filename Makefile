@@ -30,10 +30,16 @@ help:
 	@echo ""
 ifeq ($(ENV),dev)
 	@echo "Dev-specific:"
-	@echo "  test         Test covered code"
+	@echo "  install      Install dependencies with dev tools"
+	@echo "  test         Run linting, type checking and tests"
+	@echo "  lint         Run ruff linter and formatter"
+	@echo "  mypy         Run mypy type checker"
+	@echo "  pytest       Run pytest tests"
+	@echo "  test-cov     Run tests with coverage report"
 	@echo "  db           Start only DB services"
 	@echo "  run          Run bot locally"
 	@echo "  migrate      Apply migrations"
+	@echo "  migrate-new  Create new migration [msg='description']"
 endif
 	@echo ""
 
@@ -85,19 +91,74 @@ restart: down up
 
 ##@ Dev Commands
 
-.PHONY: test
-test:
-	@uv run pytest tests/ -v --cov=src --cov-report=term-missing
+.PHONY: install
+install:
+	@echo "Installing dependencies..."
+	@uv sync --all-groups
 
+.PHONY: test
+test: lint mypy pytest
+	@echo "\n✅ All checks passed!"
+
+.PHONY: lint
+lint:
+	@echo "Running ruff linter and formatter..."
+	@uv run ruff check .
+	@uv run ruff format .
+
+.PHONY: lint-fix
+lint-fix:
+	@echo "Auto-fixing with ruff..."
+	@uv run ruff check . --fix
+	@uv run ruff format .
+
+.PHONY: mypy
+mypy:
+	@echo "Running mypy type checker..."
+	@uv run python -m mypy app
+
+.PHONY: pytest
+pytest:
+	@echo "Running pytest..."
+	@uv run pytest
+
+.PHONY: test-cov
+test-cov:
+	@echo "Running tests with coverage..."
+	@uv run pytest --cov=app --cov-report=html --cov-report=term
+	@echo "\n📊 Coverage report generated in htmlcov/index.html"
 
 .PHONY: db
 db:
+	@echo "Starting database services..."
 	@docker compose up -d postgres redis
 
 .PHONY: run
 run:
+	@echo "Running bot locally..."
 	@uv run python -O -m app
 
 .PHONY: migrate
 migrate:
+	@echo "Applying migrations..."
 	@uv run alembic upgrade head
+
+.PHONY: migrate-new
+migrate-new:
+	@if [ -z "$(msg)" ]; then \
+		echo "❌ Error: msg parameter required"; \
+		echo "Usage: make migrate-new msg='your migration description'"; \
+		exit 1; \
+	fi
+	@echo "Creating new migration: $(msg)"
+	@uv run alembic revision --autogenerate -m "$(msg)"
+
+.PHONY: clean
+clean:
+	@echo "Cleaning up..."
+	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type d -name "htmlcov" -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	@echo "✨ Cleaned!"

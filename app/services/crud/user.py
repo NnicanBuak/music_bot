@@ -22,9 +22,7 @@ class UserService(CrudService):
             id=aiogram_user.id,
             name=aiogram_user.full_name,
             language=(
-                aiogram_user.language_code
-                if aiogram_user.language_code in i18n_core.available_locales
-                else DEFAULT_LOCALE
+                aiogram_user.language_code if aiogram_user.language_code in i18n_core.available_locales else DEFAULT_LOCALE
             ),
             language_code=aiogram_user.language_code,
         )

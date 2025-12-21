@@ -1,7 +1,6 @@
 """End-to-end tests for bot."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 
 class TestBotE2E:

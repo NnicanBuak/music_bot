@@ -1,7 +1,6 @@
 """Unit tests for service layer."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from sqlalchemy.ext.asyncio import AsyncSession
 
 

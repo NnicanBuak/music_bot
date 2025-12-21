@@ -1,7 +1,6 @@
 """Unit tests for utility functions."""
 
 import pytest
-from typing import Any
 
 
 class TestFormatters:
