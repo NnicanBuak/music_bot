@@ -1,33 +1,60 @@
 name: Deploy to Production
 
+
 on:
-   push:
-      branches: [main]
-   workflow_dispatch:
+  workflow_dispatch:
+
 
 jobs:
-   deploy:
-      runs-on: ubuntu-latest
-      steps:
-         - uses: actions/checkout@v4
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-         - name: Deploy to server
-           uses: appleboy/ssh-action@v1.0.0
-           with:
-              host: ${{ secrets.PROD_HOST }}
-              username: ${{ secrets.PROD_USER }}
-              key: ${{ secrets.SSH_PRIVATE_KEY }}
-              script: |
-                 cd /opt/nnican_music_bot
-                 git pull origin main
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
 
-                 chmod +x deploy/scripts/deploy.sh
-                 ./deploy/scripts/deploy.sh
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
-                 cd deploy
-                 docker compose exec -T bot uv run alembic upgrade head
+      - name: Install dependencies
+        run: uv sync
 
-         - name: Notify on failure
-           if: failure()
-           run: |
-              echo "❌ Deployment failed - check logs"
+      - name: Run tests
+        run: make test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for Docker build
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.sha }}
+          check-name: 'build'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/nnican_music_bot
+            git pull origin main
+            chmod +x deploy/scripts/deploy.sh
+            ./deploy/scripts/deploy.sh
+            cd deploy
+            docker compose exec -T bot uv run alembic upgrade head
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed - check logs"
